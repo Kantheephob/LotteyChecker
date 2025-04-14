@@ -1,0 +1,822 @@
+/* Reset and Base Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #0d0d0d;
+    color: #fff;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Typography */
+h1, h2, h3 {
+    color: #fff;
+    margin-bottom: 15px;
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+h2 {
+    font-size: 1.5rem;
+}
+
+h3 {
+    font-size: 1.3rem;
+    color: #4CAF50;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
+}
+
+/* Layout */
+#header {
+    margin-bottom: 30px;
+}
+
+.displayDirectIndirect {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 1.2rem;
+    color: #4CAF50;
+}
+
+#currentValues {
+    font-weight: bold;
+    color: #fff;
+}
+
+#combinedView {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #1a1a1a;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Utility Classes */
+.hidden {
+    display: none;
+}
+
+/* Button Styles */
+.button {
+    display: inline-block;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.primary-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.primary-button:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+.primary-button.active {
+    background-color: #2E7D32;
+    font-weight: bold;
+}
+
+.danger-button {
+    background-color: #f44336;
+    color: white;
+}
+
+.danger-button:hover {
+    background-color: #d32f2f;
+    transform: translateY(-2px);
+}
+
+.secondary-button {
+    background-color: #2196F3;
+    color: white;
+}
+
+.secondary-button:hover {
+    background-color: #0b7dda;
+    transform: translateY(-2px);
+}
+
+.submit-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.submit-button:hover:not(:disabled) {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+.submit-button:disabled {
+    background-color: #cccccc !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    margin: 0 2px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-btn {
+    background-color: #FFC107;
+    color: #000;
+}
+
+.edit-btn:hover {
+    background-color: #FFA000;
+}
+
+.delete-btn {
+    background-color: #F44336;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #D32F2F;
+}
+
+/* Form Styles */
+.form-container {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    padding: 25px;
+    margin: 20px 0;
+    border: 1px solid #333;
+    transition: all 0.3s ease;
+}
+
+.form-container.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    border: none;
+}
+
+.form-title {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #4CAF50;
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-group input {
+    flex: 1;
+}
+
+/* Custom Select */
+.custom-select {
+    position: relative;
+    width: 120px;
+}
+
+.custom-select select {
+    appearance: none;
+    padding-right: 30px;
+}
+
+.custom-select select:disabled {
+    background-color: #333;
+    color: white;
+    cursor: default;
+    opacity: 1;
+}
+
+.custom-select::after {
+    content: "▼";
+    font-size: 12px;
+    color: white;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+/* Toggle Buttons */
+.toggle-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.type-button {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    text-align: center;
+}
+
+.type-button.active {
+    background-color: #4CAF50;
+    font-weight: bold;
+}
+
+.type-button:hover {
+    background-color: #444;
+    color: white;
+}
+
+.type-button.active:hover {
+    background-color: #4CAF50;
+    color: white;
+}
+
+
+.type-button:hover:not(.active) {
+    background-color: #444;
+}
+
+.bet-type-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 15px 0;
+}
+
+.bet-type-toggle.hidden {
+    display: none;
+}
+
+.bet-type-button {
+    padding: 8px 16px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.bet-type-button.active {
+    background-color: #4CAF50;
+    font-weight: bold;
+}
+
+.bet-type-button:hover:not(.active) {
+    background-color: #444;
+}
+
+/* Table Styles */
+.table-container {
+    margin-top: 30px;
+    overflow-x: auto;
+    scroll-margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #1a1a1a;
+    color: white;
+    margin-bottom: 20px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border: 1px solid #444;
+}
+
+th {
+    background-color: #333;
+    font-weight: 500;
+}
+
+tr:hover {
+    background-color: #2a2a2a;
+}
+
+.exceed-limit {
+    color: #ff4444;
+    font-weight: bold;
+}
+
+.total-row {
+    font-weight: bold;
+    background-color: #2a2a2a;
+}
+
+/* Table Controls */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.search-input {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
+    color: white;
+    font-size: 1rem;
+}
+
+.search-input:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.pagination-button {
+    padding: 8px 16px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.pagination-button:hover:not(:disabled) {
+    background-color: #444;
+}
+
+.pagination-button:disabled {
+    background-color: #222;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 0.9rem;
+}
+
+/* Form Message */
+.form-message {
+    margin: 15px 0;
+    padding: 12px;
+    border-radius: 4px;
+    text-align: center;
+    animation: fadeIn 0.5s;
+}
+
+.form-message.success {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    border: 1px solid #4CAF50;
+}
+
+.form-message.error {
+    background-color: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+    border: 1px solid #f44336;
+}
+
+/* Error Handling */
+.error-text {
+    color: #f44336;
+    font-size: 0.8rem;
+    margin-top: 5px;
+    display: none;
+    animation: slideDown 0.3s ease-out;
+}
+
+.input-error {
+    border-color: #f44336 !important;
+    animation: shake 0.5s;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Specific Form Styles */
+#setMax {
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 25px;
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+#setMax .input-group {
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+#setMax input[type="number"] {
+    width: 100px;
+    text-align: center;
+    padding: 12px;
+}
+
+#addData {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    padding: 25px;
+    margin: 20px 0;
+    border: 1px solid #333;
+}
+
+#addData button[type="submit"] {
+    margin-left: 15px; /* เพิ่มระยะห่างจากช่องสุดท้าย */
+}
+
+#addData .form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+}
+
+#addData input[type="text"],
+#addData input[type="number"],
+#addData select {
+    width: auto;
+    flex: 1;
+    min-width: 100px;
+    padding: 12px;
+}
+
+#addData .custom-select {
+    width: 100px;
+}
+
+#addData .comma-label {
+    margin: 0;
+    font-size: 1rem;
+    color: #fff;
+}
+
+#addData .x-label {
+    display: inline !important; /* บังคับให้แสดงตลอดเวลา */
+    margin: 0 5px;
+    font-size: 1rem;
+    color: #fff;
+}
+
+#addData button[type="submit"] {
+    min-width: 80px;
+    margin-left: 0;
+}
+
+#lotteryNumber,
+#customerName {
+    min-width: 120px;
+    flex: 1;
+}
+
+#directValue {
+    margin-right: 15px; /* เพิ่มระยะห่างด้านขวาของช่องตรง */
+}
+
+#indirectValue {
+    margin-left: 5px; /* เพิ่มระยะห่างด้านซ้ายของช่องโต๊ด */
+}
+
+/* ปรับขนาดช่องกรอกจำนวนเงินให้กว้างขึ้น */
+#directValue,
+#indirectValue {
+    width: 60px;
+    padding: 0;
+    text-align: center;
+    margin: 0;
+}
+
+
+.x-label {
+    margin: 0 5px;
+    font-size: 1rem;
+}
+
+.comma-label {
+    margin: 0 5px; /* ปรับจากค่าเดิมให้เท่ากัน */
+    font-size: 1rem;
+    display: inline;
+}
+
+#topFields {
+    display: flex;
+    align-items: center;
+}
+
+#topFields .comma-label {
+    display: inline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        padding: 15px;
+    }
+    
+    #combinedView {
+        padding: 15px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    #addData .form-row {
+        flex-wrap: wrap;
+    }
+    
+    #addData input[type="text"],
+    #addData input[type="number"],
+    #addData select {
+        width: 100%;
+        flex: none;
+    }
+    
+    #addData .comma-label,
+    #addData .x-label {
+        display: none;
+    }
+    
+    .toggle-group,
+    .bet-type-toggle {
+        flex-wrap: wrap;
+    }
+    
+    .type-button,
+    .bet-type-button {
+        flex: 1;
+        min-width: 100px;
+    }
+    
+    #setMax {
+        max-width: 100%;
+    }
+    
+    #setMax .input-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    #setMax input[type="number"] {
+        width: 100%;
+    }
+    
+    .table-controls {
+        flex-direction: column;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+
+    .table-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    #searchInput,
+    #exportData {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .button,
+    .submit-button {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+    
+    #addData {
+        padding: 15px;
+    }
+    
+    #directValue,
+    #indirectValue {
+        width: 80px;
+    }
+}
+
+/* ปุ่มใหญ่ในส่วน option */
+.option {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.option .large-button {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #333;
+    color: white;
+    font-weight: 500;
+    min-width: 200px;
+    text-align: center;
+}
+
+.option .large-button:hover {
+    background-color: #444;
+    transform: translateY(-2px);
+}
+
+.option .large-button.primary-button {
+    background-color: #4CAF50;
+}
+
+.option .large-button.primary-button:hover {
+    background-color: #45a049;
+}
+
+.option .large-button.danger-button {
+    background-color: #f44336;
+}
+
+.option .large-button.danger-button:hover {
+    background-color: #d32f2f;
+}
+
+.pagination button,
+#exportData {
+    padding: 8px 16px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+}
+
+.pagination button:hover:not(:disabled),
+#exportData:hover {
+    background-color: #444;
+}
+
+.pagination button:disabled {
+    background-color: #222;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.export-button {
+    background-color: #2196F3 !important;
+}
+
+.export-button:hover {
+    background-color: #0b7dda !important;
+}
+
+/* ปรับตำแหน่งปุ่ม Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#searchInput {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 15px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
+    color: white;
+    font-size: 1rem;
+}
+
+#searchInput:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+input:disabled {
+    background-color: #222 !important;
+    color: #666 !important;
+    cursor: not-allowed;
+}
+
+input:disabled::placeholder {
+    color: transparent;
+}

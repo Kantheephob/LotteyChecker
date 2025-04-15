@@ -1,19 +1,23 @@
-<!-- ในไฟล์ index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lottery Checker</title>
     <link rel="stylesheet" href="../CSS/style.css">
     <link rel="icon" type="image/x-icon" href="../Icon/icon.png">
-    <title>Lottery Checker</title>
 </head>
 <body>
-    <div id="header">
+    <div class="displayTitle">
         <h1>Welcome to Lottery Checker</h1>
     </div>
-
-    <h2 class="displayDirectIndirect">ค่าตรง/โต๊ดที่กำหนดไว้ : <span id="currentValues">0 x 0</span></h2>
+    
+    <div class="displayMaxValuesForEach">
+        <h2 class="diplayTop3DirectIndirect">3 ตัวบน ตรง/โต๊ด : <span id="currentTop3DirectIndirectValues">0 x 0</span></h2>
+        <h2 class="displayTop2Direct">2 ตัวบน ตรง : <span id="currentTop2DirectValues">0</span></h2>
+        <h2 class="displayDown3Direct">3 ตัวล่าง ตรง : <span id="currentDown3DirectValues">0</span></h2>
+        <h2 class="displayDown2Direct">2 ตัวล่าง ตรง : <span id="currentDown2DirectValues">0</span></h2>
+    </div>
 
     <div class="option">
         <button id="showSetMax" class="primary-button large-button">แก้ไขค่าจำนวนสูงสุด</button>
@@ -21,81 +25,172 @@
     </div>
 
     <form id="setMax" class="hidden">
-        <label for="directInput">กำหนดค่าสูงสุดของ ตรง/โต๊ด</label>
-        <div class="input-group">
-            <input type="number" id="directInput" placeholder="ตรง" required min="1">
-            <span style="margin: 0 10px; font-size: 1.2rem;">x</span>
-            <input type="number" id="indirectInput" placeholder="โต๊ด" required min="1">
+        <div id="maxValueMessage" class="form-message hidden"></div>
+        <h3 class="form-title">กำหนดค่าสูงสุด</h3>
+        
+        <div class="setting-group">
+            <label>3 ตัวบน</label>
+            <div class="input-with-confirm">
+                <div class="input-group">
+                    <input type="number" id="top3Direct" placeholder="ตรง" min="0">
+                    <span class="x-label">x</span>
+                    <input type="number" id="top3Indirect" placeholder="โต๊ด" min="0">
+                </div>
+                <button type="button" class="confirm-btn" data-type="top3">ยืนยัน</button>
+            </div>
         </div>
-        <button type="submit" class="submit-button disabled-button" disabled>ยืนยัน</button>
+        
+        <div class="setting-group">
+            <label>2 ตัวบน</label>
+            <div class="input-with-confirm">
+                <div class="input-group">
+                    <input type="number" id="top2Direct" placeholder="ตรง" min="0">
+                </div>
+                <button type="button" class="confirm-btn" data-type="top2">ยืนยัน</button>
+            </div>
+        </div>
+        
+        <div class="setting-group">
+            <label>3 ตัวล่าง</label>
+            <div class="input-with-confirm">
+                <div class="input-group">
+                    <input type="number" id="down3Direct" placeholder="ตรง" min="0">
+                </div>
+                <button type="button" class="confirm-btn" data-type="down3">ยืนยัน</button>
+            </div>
+        </div>
+        
+        <div class="setting-group">
+            <label>2 ตัวล่าง</label>
+            <div class="input-with-confirm">
+                <div class="input-group">
+                    <input type="number" id="down2Direct" placeholder="ตรง" min="0">
+                </div>
+                <button type="button" class="confirm-btn" data-type="down2">ยืนยัน</button>
+            </div>
+        </div>
     </form>
 
-    <!-- Combined view container -->
     <div id="combinedView">
         <div class="type-toggle">
             <button id="toggleTop" class="type-button active">ตัวบน</button>
             <button id="toggleDown" class="type-button">ตัวล่าง</button>
         </div>
 
-        <div class="bet-type-toggle hidden">
-            <button id="toggleBoth" class="bet-type-button" data-type="both">ตรงและโต๊ด</button>
-            <button id="toggleDirectOnly" class="bet-type-button active" data-type="direct">ตรงเท่านั้น</button>
-            <button id="toggleIndirectOnly" class="bet-type-button" data-type="indirect">โต๊ดเท่านั้น</button>
-            
+        <div class="toggle3or2">
+            <button id="toggle3" class="type-button active">3 ตัว</button>
+            <button id="toggle2" class="type-button">2 ตัว</button>
         </div>
-        
-        <!-- ในส่วนของฟอร์ม -->
+    
         <form id="addData">
             <h3 class="form-title">กรอกข้อมูลลูกค้า</h3>
             <div class="form-row">
-                <input type="text" id="lotteryNumber" placeholder="เลขหวย (2-3 ตัว)" required maxlength="3" pattern="[0-9]*" inputmode="numeric">
-                <span class="comma-label">,</span>
-                <input type="text" id="customerName" placeholder="คนซื้อ" required pattern="[ก-๙a-zA-Z\s]*" title="กรุณากรอกเฉพาะตัวอักษร">
-                <span class="comma-label">,</span>
-                <div class="custom-select">
-                    <select name="buyType" id="buyType" disabled>
-                        <option value="top">บน</option>
-                        <option value="down">ล่าง</option>
-                    </select>
+                <div class="input-group">
+                    <input type="text" id="lotteryNumber" placeholder="เลขหวย" required maxlength="3" pattern="[0-9]*" inputmode="numeric">
                 </div>
                 <span class="comma-label">,</span>
-                <input type="number" id="directValue" placeholder="ตรง" min="0">
+                <div class="input-group">
+                    <input type="text" id="customerName" placeholder="ชื่อลูกค้า" required pattern="^(?=.*[ก-๙a-zA-Z])[ก-๙a-zA-Z0-9\s]*$" title="กรุณากรอกชื่อลูกค้า (ต้องมีตัวอักษรอย่างน้อย 1 ตัว และอนุญาตให้มีตัวเลข)">
+                </div>
+                <span class="comma-label">,</span>
+                <div class="input-group">
+                    <input type="text" id="buyTypeText" placeholder="ประเภท" readonly>
+                </div>
+                <span class="comma-label">,</span>
+                <div class="input-group">
+                    <input type="number" id="directValue" placeholder="ตรง" min="0">
+                </div>
                 <span class="x-label">x</span>
-                <input type="number" id="indirectValue" placeholder="โต๊ด" min="0">
-                <button type="submit" class="submit-button disabled-button" disabled>ยืนยัน</button>
+                <div class="input-group">
+                    <input type="number" id="indirectValue" placeholder="โต๊ด" min="0">
+                </div>
+                <button type="submit" class="submit-button">ยืนยัน</button>
             </div>
-        </form>       
+        </form>
 
         <!-- Alert Text-->
         <div id="formMessage" class="form-message"></div>
 
-        <!-- Data Table -->
-        <div id="dataTable">
-            <div class="table-controls">
-                <input type="text" id="searchInput" placeholder="ค้นหาด้วยเลขหวยหรือชื่อลูกค้า...">
-                <button id="exportData" class="export-button">Export to CSV</button>
+        <!-- Data Tables - แยกเป็น 2 ตาราง -->
+        <div class="data-tables-container">
+            <!-- ตารางเลข 3 ตัว -->
+            <div id="dataTable3digits" class="data-table">
+                <div class="table-controls">
+                    <input type="text" id="searchInput3" placeholder="ค้นหาเลข 3 ตัวหรือชื่อลูกค้า...">
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>เลขหวย (3 ตัว)</th>
+                            <th>ประเภท</th>
+                            <th>ชื่อลูกค้า</th>
+                            <th>ตรง</th>
+                            <th>โต๊ด</th>
+                            <th>หมายเหตุ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody3digits">
+                        <!-- Data will be inserted here -->
+                    </tbody>
+                </table>
+                <div class="pagination">
+                    <button id="prevPage3" class="pagination-button">Previous</button>
+                    <span id="pageInfo3" class="page-info">Page 1 of 1</span>
+                    <button id="nextPage3" class="pagination-button">Next</button>
+                </div>
             </div>
+            
+            <!-- ตารางเลข 2 ตัว -->
+            <div id="dataTable2digits" class="data-table">
+                <div class="table-controls">
+                    <input type="text" id="searchInput2" placeholder="ค้นหาเลข 2 ตัวหรือชื่อลูกค้า...">
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>เลขหวย (2 ตัว)</th>
+                            <th>ประเภท</th>
+                            <th>ชื่อลูกค้า</th>
+                            <th>ตรง</th>
+                            <th>โต๊ด</th>
+                            <th>หมายเหตุ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody2digits">
+                        <!-- Data will be inserted here -->
+                    </tbody>
+                </table>
+                <div class="pagination">
+                    <button id="prevPage2" class="pagination-button">Previous</button>
+                    <span id="pageInfo2" class="page-info">Page 1 of 1</span>
+                    <button id="nextPage2" class="pagination-button">Next</button>
+                </div>
+            </div>
+
+            <div class="export-all-container">
+                <button id="exportAllData" class="export-all-button">Export All to CSV</button>
+            </div>
+        </div>
+
+        <div id="numberSummaryTable" class="summary-section">
+            <h3>สรุปเลขหวยแยกตามเลขและประเภท</h3>
             <table>
                 <thead>
                     <tr>
                         <th>เลขหวย</th>
                         <th>ประเภท</th>
-                        <th>ชื่อคนซื้อ</th>
-                        <th>ตรง</th>
-                        <th>โต๊ด</th>
-                        <th>หมายเหตุ</th>
-                        <th>จัดการ</th>
+                        <th>รายชื่อผู้ซื้อ</th>
+                        <th>ยอดซื้อตรง</th>
+                        <th>ยอดซื้อโต๊ด</th>
+                        <th>ยอดซื้อรวม</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody">
-                    <!-- Data will be inserted here -->
+                <tbody id="numberSummaryBody">
+                    <!-- Summary data number will be inserted here -->
                 </tbody>
             </table>
-            <div class="pagination">
-                <button id="prevPage">Previous</button>
-                <span id="pageInfo">Page 1 of 1</span>
-                <button id="nextPage">Next</button>
-            </div>
         </div>
         
         <div id="summaryTable" class="summary-section">
@@ -103,10 +198,11 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ชื่อคนซื้อ</th>
-                        <th>รวมบน (ตรง)</th>
-                        <th>รวมบน (โต๊ด)</th>
-                        <th>รวมล่าง</th>
+                        <th>ชื่อลูกค้า</th>
+                        <th>เลขที่ซื้อ</th>
+                        <th>รวมตัวบน (ตรง)</th>
+                        <th>รวมตัวบน (โต๊ด)</th>
+                        <th>รวมตัวล่าง</th>
                         <th>รวมทั้งหมด</th>
                     </tr>
                 </thead>

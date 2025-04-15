@@ -1,1012 +1,975 @@
-// Database Keys
-const DB_KEYS = {
-    CUSTOMERS: 'lottery_customers',
-    SETTINGS: 'lottery_settings'
-};
+// DOM Elements
+const showSetMaxBtn = document.getElementById('showSetMax');
+const clearDataBtn = document.getElementById('clearData');
+const setMaxForm = document.getElementById('setMax');
+const combinedView = document.getElementById('combinedView');
+const addDataForm = document.getElementById('addData');
+const formMessage = document.getElementById('formMessage');
+const maxValueMessage = document.getElementById('maxValueMessage');
 
-// Store current state
-let currentPage = 1;
-const rowsPerPage = 10;
-let directValue = 0;
-let indirectValue = 0;
-let currentSelectedType = 'top';
-let currentSelectedValueType = 'direct';
-let currentSelectedMode = 'top';
-let currentBetType = 'both';
+// Toggle buttons
+const toggleTopBtn = document.getElementById('toggleTop');
+const toggleDownBtn = document.getElementById('toggleDown');
+const toggle3Btn = document.getElementById('toggle3');
+const toggle2Btn = document.getElementById('toggle2');
 
-// DOM elements
-const currentValuesElement = document.getElementById('currentValues');
-const directInput = document.getElementById('directInput');
-const indirectInput = document.getElementById('indirectInput');
+// Table elements
+const dataTable3digits = document.getElementById('dataTable3digits');
+const dataTable2digits = document.getElementById('dataTable2digits');
+const tableBody3digits = document.getElementById('tableBody3digits');
+const tableBody2digits = document.getElementById('tableBody2digits');
+const searchInput3 = document.getElementById('searchInput3');
+const searchInput2 = document.getElementById('searchInput2');
+const prevPage3 = document.getElementById('prevPage3');
+const nextPage3 = document.getElementById('nextPage3');
+const pageInfo3 = document.getElementById('pageInfo3');
+const prevPage2 = document.getElementById('prevPage2');
+const nextPage2 = document.getElementById('nextPage2');
+const pageInfo2 = document.getElementById('pageInfo2');
+const exportAllDataBtn = document.getElementById('exportAllData');
+
+// Summary tables
+const numberSummaryBody = document.getElementById('numberSummaryBody');
+const summaryBody = document.getElementById('summaryBody');
+
+// Form inputs
 const lotteryNumberInput = document.getElementById('lotteryNumber');
 const customerNameInput = document.getElementById('customerName');
+const buyTypeTextInput = document.getElementById('buyTypeText');
 const directValueInput = document.getElementById('directValue');
 const indirectValueInput = document.getElementById('indirectValue');
-const buyTypeSelect = document.getElementById('buyType');
-const tableBody = document.getElementById('tableBody');
-const searchInput = document.getElementById('searchInput');
-const valueInput = document.getElementById('valueInput');
+const submitBtn = addDataForm.querySelector('.submit-button');
+
+// Max value inputs
+const top3DirectInput = document.getElementById('top3Direct');
+const top3IndirectInput = document.getElementById('top3Indirect');
+const top2DirectInput = document.getElementById('top2Direct');
+const down3DirectInput = document.getElementById('down3Direct');
+const down2DirectInput = document.getElementById('down2Direct');
+
+// Display max values
+const currentTop3DirectIndirectValues = document.getElementById('currentTop3DirectIndirectValues');
+const currentTop2DirectValues = document.getElementById('currentTop2DirectValues');
+const currentDown3DirectValues = document.getElementById('currentDown3DirectValues');
+const currentDown2DirectValues = document.getElementById('currentDown2DirectValues');
+
+// Data storage
+let lotteryData = {
+    top3: [],
+    top2: [],
+    down3: [],
+    down2: []
+};
+
+let currentMaxValues = {
+    top3Direct: 0,
+    top3Indirect: 0,
+    top2Direct: 0,
+    down3Direct: 0,
+    down2Direct: 0
+};
+
+// Pagination
+const itemsPerPage = 10;
+let currentPage3 = 1;
+let currentPage2 = 1;
+let filteredData3 = [];
+let filteredData2 = [];
 
 // Initialize the app
 function init() {
-    loadSettings();
+    loadData();
+    loadMaxValues();
+    updateUI();
     setupEventListeners();
-    updateCurrentValuesDisplay();
-    renderDataTable();
-    renderSummaryTable();
-    
-    // ตั้งค่าเริ่มต้นเป็นโหมด "ทั้งตรงและโต๊ด"
-    setActiveBetType('both');
-    setActiveMode('top'); // ตั้งค่าเริ่มต้นเป็นโหมดตัวบน
-    
-    // ซ่อนช่องกรอกค่าตามค่าเริ่มต้น
-    updateFormFields();
 }
 
-// Load settings from database
-function loadSettings() {
-    const settings = getFromDB(DB_KEYS.SETTINGS) || {};
-    directValue = settings.directValue || 0;
-    indirectValue = settings.indirectValue || 0;
-    
-    // ไม่ต้องแสดงค่า 0 ในช่อง input
-    if (directInput) directInput.value = directValue > 0 ? directValue : '';
-    if (indirectInput) indirectInput.value = indirectValue > 0 ? indirectValue : '';
-}
-
-// Save settings to database
-function saveSettings() {
-    const settings = {
-        directValue,
-        indirectValue
-    };
-    saveToDB(DB_KEYS.SETTINGS, settings);
-}
-
-// Database functions
-function saveToDB(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
-}
-
-function getFromDB(key) {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : null;
-}
-
-// เพิ่มฟังก์ชัน setActiveMode
-function setActiveMode(mode) {
-    currentSelectedMode = mode;
-    currentSelectedType = mode === 'down' ? 'down' : 'top';
-    
-    // อัพเดตปุ่ม toggle
-    document.getElementById('toggleTop').classList.toggle('active', mode === 'top');
-    document.getElementById('toggleDown').classList.toggle('active', mode === 'down');
-    
-    // ตั้งค่า select ตามโหมด
-    const buyTypeSelect = document.getElementById('buyType');
-    buyTypeSelect.value = mode === 'down' ? 'down' : 'top';
-    
-    // ซ่อนหรือแสดงแถบเลือกประเภทการซื้อ
-    const betTypeToggle = document.querySelector('.bet-type-toggle');
-    if (mode === 'top') {
-        betTypeToggle.classList.remove('hidden');
-    } else {
-        betTypeToggle.classList.add('hidden');
-        // เมื่อเปลี่ยนเป็นโหมดตัวล่าง ให้ใช้โหมด "ตรงเท่านั้น"
-        setActiveBetType('direct');
+// Load saved data from localStorage
+function loadData() {
+    const savedData = localStorage.getItem('lotteryData');
+    if (savedData) {
+        lotteryData = JSON.parse(savedData);
     }
-    
-    // อัพเดตฟิลด์กรอกข้อมูล
-    updateFormFields();
 }
 
-
-// แก้ไขฟังก์ชัน setActiveValueType
-function setActiveValueType(type) {
-    if (currentSelectedMode === 'down') return; // ไม่ทำอะไรถ้าเป็นโหมดตัวล่าง
-    
-    currentSelectedValueType = type;
-    
-    // Update toggle buttons
-    document.getElementById('toggleDirect').classList.toggle('active', type === 'direct');
-    document.getElementById('toggleIndirect').classList.toggle('active', type === 'indirect');
-    
-    // แก้ไขส่วนนี้: ไม่ต้องอัพเดต placeholder ในโหมดตัวบน
-    // (เราได้ตั้งค่า placeholder เป็น "จำนวน" ใน setActiveMode แล้ว)
-}
-
-function updateFormFields() {
-    const directInput = document.getElementById('directValue');
-    const indirectInput = document.getElementById('indirectValue');
-    
-    if (currentSelectedMode === 'top') {
-        // โหมดตัวบน
-        directInput.disabled = currentBetType === 'indirect';
-        indirectInput.disabled = currentBetType === 'direct';
-        
-        // ตั้งค่า placeholder
-        if (currentBetType === 'direct') {
-            directInput.placeholder = "ตรง";
-            indirectInput.placeholder = "";
-        } else if (currentBetType === 'indirect') {
-            directInput.placeholder = "";
-            indirectInput.placeholder = "โต๊ด";
-        } else {
-            directInput.placeholder = "ตรง";
-            indirectInput.placeholder = "โต๊ด";
-        }
-    } else {
-        // โหมดตัวล่าง
-        directInput.placeholder = "ตรง";
-        directInput.disabled = false;
-        indirectInput.placeholder = "";
-        indirectInput.disabled = true;
-        indirectInput.value = "";
+// Load max values from localStorage
+function loadMaxValues() {
+    const savedMaxValues = localStorage.getItem('lotteryMaxValues');
+    if (savedMaxValues) {
+        currentMaxValues = JSON.parse(savedMaxValues);
+        updateMaxValueDisplays();
+        updateMaxValueInputs();
     }
-    
-    // ตรวจสอบความถูกต้องของฟอร์มใหม่
-    checkFormValidity();
 }
 
-// Update the display of current direct/indirect values
-function updateCurrentValuesDisplay() {
-    currentValuesElement.textContent = `${directValue} x ${indirectValue}`;
+// Save data to localStorage
+function saveData() {
+    localStorage.setItem('lotteryData', JSON.stringify(lotteryData));
 }
 
-// Set up all event listeners
+// Save max values to localStorage
+function saveMaxValues() {
+    localStorage.setItem('lotteryMaxValues', JSON.stringify(currentMaxValues));
+    updateMaxValueDisplays();
+}
+
+// Update max value displays
+function updateMaxValueDisplays() {
+    currentTop3DirectIndirectValues.textContent = `${currentMaxValues.top3Direct} x ${currentMaxValues.top3Indirect}`;
+    currentTop2DirectValues.textContent = currentMaxValues.top2Direct;
+    currentDown3DirectValues.textContent = currentMaxValues.down3Direct;
+    currentDown2DirectValues.textContent = currentMaxValues.down2Direct;
+}
+
+// Update max value inputs
+function updateMaxValueInputs() {
+    top3DirectInput.value = currentMaxValues.top3Direct;
+    top3IndirectInput.value = currentMaxValues.top3Indirect;
+    top2DirectInput.value = currentMaxValues.top2Direct;
+    down3DirectInput.value = currentMaxValues.down3Direct;
+    down2DirectInput.value = currentMaxValues.down2Direct;
+}
+
+// Setup event listeners
 function setupEventListeners() {
-    // Button click handlers
-    document.getElementById('showSetMax').addEventListener('click', function() {
-        toggleElement('setMax', this);
+    // Show/hide set max form
+    showSetMaxBtn.addEventListener('click', () => {
+        setMaxForm.classList.toggle('hidden');
     });
 
-    document.getElementById('clearData').addEventListener('click', clearAllData);
-    customerNameInput.addEventListener('input', validateCustomerName);
-
-    // Form submission handlers
-    document.getElementById('setMax').addEventListener('submit', function(e) {
-        e.preventDefault();
-        setMaxValues();
-    });
-
-    document.getElementById('addData').addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (validateCustomerForm()) {
-            addCustomerData();
+    // Clear all data
+    clearDataBtn.addEventListener('click', () => {
+        if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถยกเลิกได้')) {
+            lotteryData = {
+                top3: [],
+                top2: [],
+                down3: [],
+                down2: []
+            };
+            saveData();
+            updateUI();
+            showMessage('ลบข้อมูลทั้งหมดเรียบร้อยแล้ว', 'success');
         }
     });
 
-    document.getElementById('toggleTop').addEventListener('click', function() {
-        setActiveMode('top');
+    // Form submission for adding data
+    addDataForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (addLotteryData()) {
+            // ไม่ต้อง reset ทั้งฟอร์ม แต่เคลียร์เฉพาะช่องที่ต้องการ
+            submitBtn.disabled = true;
+            submitBtn.classList.add('disabled-button');
+        }
     });
 
-    document.getElementById('toggleDown').addEventListener('click', function() {
-        setActiveMode('down');
+    // Input validation for lottery number
+    lotteryNumberInput.addEventListener('input', (e) => {
+        const is3Digits = toggle3Btn.classList.contains('active');
+        const maxLength = is3Digits ? 3 : 2;
+        
+        // จำกัดจำนวนตัวเลขตามที่เลือก
+        e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, maxLength);
+        validateForm();
     });
 
-    document.getElementById('toggleDirectOnly').addEventListener('click', function() {
-        setActiveBetType('direct');
-    });
-    
-    document.getElementById('toggleIndirectOnly').addEventListener('click', function() {
-        setActiveBetType('indirect');
-    });
-    
-    document.getElementById('toggleBoth').addEventListener('click', function() {
-        setActiveBetType('both');
+    // Input validation for customer name
+    customerNameInput.addEventListener('input', (e) => {
+        // อนุญาตให้มีตัวเลขและช่องว่างได้ แต่ต้องมีตัวอักษรอย่างน้อย 1 ตัว
+        e.target.value = e.target.value.replace(/[^ก-๙a-zA-Z0-9\s]/g, '');
+        validateForm();
     });
 
-    // Buy type select change
-    document.getElementById('buyType').addEventListener('change', function() {
-        updateFormFields();
+    // Direct/indirect value inputs
+    directValueInput.addEventListener('input', validateForm);
+    indirectValueInput.addEventListener('input', validateForm);
+
+    // Toggle buttons
+    toggleTopBtn.addEventListener('click', () => {
+        toggleTopBtn.classList.add('active');
+        toggleDownBtn.classList.remove('active');
+        buyTypeTextInput.value = 'ตัวบน';
+        validateForm();
+        updateUI();
     });
 
-    // Lottery number validation
-    lotteryNumberInput.addEventListener('input', function() {
-        validateLotteryNumber();
+    toggleDownBtn.addEventListener('click', () => {
+        toggleDownBtn.classList.add('active');
+        toggleTopBtn.classList.remove('active');
+        buyTypeTextInput.value = 'ตัวล่าง';
+        validateForm();
+        updateUI();
     });
 
-    // Table controls
-    searchInput.addEventListener('input', function() {
-        currentPage = 1;
-        renderDataTable();
-        renderSummaryTable();
+    toggle3Btn.addEventListener('click', () => {
+        toggle3Btn.classList.add('active');
+        toggle2Btn.classList.remove('active');
+        validateForm();
+        updateUI();
     });
 
-    document.getElementById('exportData').addEventListener('click', exportToCSV);
+    toggle2Btn.addEventListener('click', () => {
+        toggle2Btn.classList.add('active');
+        toggle3Btn.classList.remove('active');
+        validateForm();
+        updateUI();
+    });
+
+    // Search functionality
+    searchInput3.addEventListener('input', () => {
+        currentPage3 = 1;
+        filterAndDisplayData();
+    });
+
+    searchInput2.addEventListener('input', () => {
+        currentPage2 = 1;
+        filterAndDisplayData();
+    });
 
     // Pagination
-    document.getElementById('prevPage').addEventListener('click', function() {
-        if (currentPage > 1) {
-            currentPage--;
-            renderDataTable();
-            renderSummaryTable();
+    prevPage3.addEventListener('click', () => {
+        if (currentPage3 > 1) {
+            currentPage3--;
+            filterAndDisplayData();
         }
     });
 
-    document.getElementById('nextPage').addEventListener('click', function() {
-        const totalPages = Math.ceil(getFilteredCustomers().length / rowsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderDataTable();
-            renderSummaryTable();
+    nextPage3.addEventListener('click', () => {
+        const maxPage = Math.ceil(filteredData3.length / itemsPerPage);
+        if (currentPage3 < maxPage) {
+            currentPage3++;
+            filterAndDisplayData();
         }
     });
 
-    // Type toggle buttons
-    document.getElementById('toggleTop').addEventListener('click', function() {
-        setActiveBetType('top');
-    });
-
-    document.getElementById('toggleDown').addEventListener('click', function() {
-        setActiveMode('down');
-    });
-
-    // Buy type select change
-    buyTypeSelect.addEventListener('change', function() {
-        setActiveBetType(this.value);
-    });
-
-    // เพิ่ม Event Listener สำหรับฟอร์ม
-    document.getElementById('addData').addEventListener('keydown', function(e) {
-        if (e.target.tagName === 'INPUT' && e.key === 'Enter') {
-            handleEnterKey(e);
+    prevPage2.addEventListener('click', () => {
+        if (currentPage2 > 1) {
+            currentPage2--;
+            filterAndDisplayData();
         }
     });
 
-    lotteryNumberInput.addEventListener('input', function() {
-        validateLotteryNumber();
-        validateCustomerForm();
-    });
-
-    customerNameInput.addEventListener('input', function() {
-        validateCustomerName();
-        validateCustomerForm();
-    });
-
-    directValueInput.addEventListener('input', function() {
-        validateCustomerForm();
-    });
-
-    indirectValueInput.addEventListener('input', function() {
-        validateCustomerForm();
-    });
-
-    // Real-time validation
-    lotteryNumberInput.addEventListener('input', function() {
-        validateLotteryNumber();
-        checkFormValidity();
-    });
-
-    customerNameInput.addEventListener('input', function() {
-        validateCustomerName();
-        checkFormValidity();
-    });
-
-    directValueInput.addEventListener('input', function() {
-        checkFormValidity();
-    });
-
-    indirectValueInput.addEventListener('input', function() {
-        checkFormValidity();
-    });
-
-    // เพิ่ม Event Listener สำหรับการเปลี่ยนประเภทการซื้อ
-    document.getElementById('toggleDirectOnly').addEventListener('click', function() {
-        setTimeout(checkFormValidity, 0);
-    });
-    document.getElementById('toggleIndirectOnly').addEventListener('click', function() {
-        setTimeout(checkFormValidity, 0);
-    });
-    document.getElementById('toggleBoth').addEventListener('click', function() {
-        setTimeout(checkFormValidity, 0);
-    });
-
-    document.getElementById('setMax').addEventListener('submit', function(e) {
-        e.preventDefault();
-        setMaxValues();
-    });
-
-    directInput.addEventListener('input', validateMaxValues);
-    indirectInput.addEventListener('input', validateMaxValues);
-
-    document.getElementById('setMax').addEventListener('keydown', function(e) {
-        if (e.target.tagName === 'INPUT' && e.key === 'Enter') {
-            e.preventDefault();
-            const form = e.currentTarget;
-            const inputs = Array.from(form.querySelectorAll('input, button[type="submit"]'));
-            const currentIndex = inputs.indexOf(e.target);
-            
-            if (currentIndex < inputs.length - 1) {
-                inputs[currentIndex + 1].focus();
-            } else {
-                // ถ้าเป็นช่องสุดท้ายให้ส่งฟอร์มอัตโนมัติ
-                if (!form.querySelector('button[type="submit"]').disabled) {
-                    form.dispatchEvent(new Event('submit'));
-                }
-            }
+    nextPage2.addEventListener('click', () => {
+        const maxPage = Math.ceil(filteredData2.length / itemsPerPage);
+        if (currentPage2 < maxPage) {
+            currentPage2++;
+            filterAndDisplayData();
         }
     });
 
-    // เพิ่ม Event Listener สำหรับ realtime validation ในฟอร์ม setMax
-    directInput.addEventListener('input', validateMaxValues);
-    indirectInput.addEventListener('input', validateMaxValues);
+    // Export data
+    exportAllDataBtn.addEventListener('click', exportAllData);
+
+    // Confirm buttons for max values
+    const confirmButtons = document.querySelectorAll('.confirm-btn');
+    confirmButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const type = e.target.dataset.type;
+            confirmMaxValue(type);
+        });
+    });
 }
 
-function validateMaxValues() {
-    const directVal = parseInt(directInput.value);
-    const indirectVal = parseInt(indirectInput.value);
-    const submitButton = document.querySelector('#setMax button[type="submit"]');
-
-    // เคลียร์ error ก่อนตรวจสอบใหม่
-    directInput.classList.remove('input-error');
-    indirectInput.classList.remove('input-error');
-
-    let isValid = true;
-
-    // ตรวจสอบค่า direct
-    if (isNaN(directVal)) {
-        directInput.classList.add('input-error');
-        isValid = false;
-    }
-
-    // ตรวจสอบค่า indirect
-    if (isNaN(indirectVal)) {
-        indirectInput.classList.add('input-error');
-        isValid = false;
-    }
-
-    // อัพเดตสถานะปุ่ม submit
-    submitButton.disabled = !isValid;
-    submitButton.classList.toggle('disabled-button', !isValid);
+// Validate form inputs
+function validateForm() {
+    const isTop = toggleTopBtn.classList.contains('active');
+    const is3Digits = toggle3Btn.classList.contains('active');
     
-    return isValid;
-}
-
-function validateLotteryNumber() {
-    const value = lotteryNumberInput.value.trim();
-    const isValid = /^\d{2,3}$/.test(value);
+    // ตรวจสอบความยาวเลขหวยตามที่เลือก
+    const requiredLength = is3Digits ? 3 : 2;
+    const numberValid = lotteryNumberInput.value.length === requiredLength;
     
-    if (!isValid && value !== '') {
-        showError(lotteryNumberInput, 'กรุณากรอกเลขหวย 2-3 ตัว (ตัวเลขเท่านั้น)');
-        return false;
+    // ตรวจสอบชื่อลูกค้า (ต้องไม่ว่างเปล่าและต้องมีตัวอักษรอย่างน้อย 1 ตัว)
+    const nameValue = customerNameInput.value.trim();
+    const nameValid = nameValue.length > 0 && /[ก-๙a-zA-Z]/.test(nameValue);
+    
+    // Validate direct value (required)
+    const directValue = parseInt(directValueInput.value) || 0;
+    const directValid = !isNaN(directValue) && directValue >= 0;
+    
+    // Validate indirect value (required for top3 only)
+    let indirectValid = true;
+    const indirectValue = parseInt(indirectValueInput.value) || 0;
+    
+    if (isTop && is3Digits) {
+        indirectValid = !isNaN(indirectValue) && indirectValue >= 0;
+        
+        // สำหรับ 3 ตัวบน ต้องกรอกค่าตรงหรือโต๊ดอย่างน้อยหนึ่งค่า
+        if (directValue === 0 && indirectValue === 0) {
+            showMessage('กรุณากรอกค่าตรงหรือโต๊ดอย่างน้อยหนึ่งค่า', 'error');
+            return false;
+        }
+    }
+    
+    // Enable/disable submit button
+    if (numberValid && nameValid && directValid && indirectValid) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('disabled-button');
     } else {
-        clearError(lotteryNumberInput);
-        return true;
+        submitBtn.disabled = true;
+        submitBtn.classList.add('disabled-button');
     }
-}
-function validateCustomerName() {
-    const value = customerNameInput.value.trim();
-    const isValid = /^[ก-๙a-zA-Z\s]+$/.test(value);
     
-    if (!isValid && value !== '') {
-        showError(customerNameInput, 'กรุณากรอกเฉพาะตัวอักษร (ไม่มีตัวเลขหรืออักขระพิเศษ)');
-        return false;
-    } else {
-        clearError(customerNameInput);
-        return true;
-    }
+    return numberValid && nameValid && directValid && indirectValid;
 }
 
-// แก้ไขฟังก์ชัน validateCustomerForm
-function validateCustomerForm() {
-    // ตรวจสอบฟิลด์พื้นฐาน
-    if (lotteryNumberInput.value.trim() === '' || !validateLotteryNumber()) {
-        updateSubmitButton(false);
+// Add new lottery data
+function addLotteryData() {
+    if (!validateForm()) return false;
+
+    const isTop = toggleTopBtn.classList.contains('active');
+    const is3Digits = toggle3Btn.classList.contains('active');
+    
+    const newEntry = {
+        number: lotteryNumberInput.value,
+        name: customerNameInput.value.trim(),
+        type: isTop ? 'ตัวบน' : 'ตัวล่าง',
+        direct: parseInt(directValueInput.value) || 0,
+        indirect: (isTop && is3Digits) ? (parseInt(indirectValueInput.value) || 0) : 0,
+        timestamp: new Date().getTime()
+    };
+
+    // ตรวจสอบอีกครั้งว่าค่าเป็น 0 ทั้งคู่หรือไม่ (สำหรับกรณีที่ bypass validation)
+    if (isTop && is3Digits && newEntry.direct === 0 && newEntry.indirect === 0) {
+        showMessage('กรุณากรอกค่าตรงหรือโต๊ดอย่างน้อยหนึ่งค่า', 'error');
         return false;
     }
-    
-    if (customerNameInput.value.trim() === '' || !validateCustomerName()) {
-        updateSubmitButton(false);
-        return false;
-    }
-    
-    // ตรวจสอบค่าตามโหมดการซื้อ
-    const directVal = parseInt(directValueInput.value) || 0;
-    const indirectVal = parseInt(indirectValueInput.value) || 0;
-    
-    if (currentSelectedMode === 'top') {
-        if (currentBetType === 'direct' && directVal === 0) {
-            showError(directValueInput, 'กรุณากรอกจำนวนตรง');
-            updateSubmitButton(false);
-            return false;
-        } else if (currentBetType === 'indirect' && indirectVal === 0) {
-            showError(indirectValueInput, 'กรุณากรอกจำนวนโต๊ด');
-            updateSubmitButton(false);
-            return false;
-        } else if (currentBetType === 'both' && directVal === 0 && indirectVal === 0) {
-            showError(directValueInput, 'กรุณากรอกจำนวนตรงหรือโต๊ดอย่างน้อยหนึ่งช่อง');
-            showError(indirectValueInput, 'กรุณากรอกจำนวนตรงหรือโต๊ดอย่างน้อยหนึ่งช่อง');
-            updateSubmitButton(false);
-            return false;
-        }
+
+    // Determine which array to add to
+    let targetArray;
+    if (isTop) {
+        targetArray = is3Digits ? lotteryData.top3 : lotteryData.top2;
     } else {
-        // โหมดตัวล่าง
-        if (directVal === 0) {
-            showError(directValueInput, 'กรุณากรอกจำนวน');
-            updateSubmitButton(false);
-            return false;
-        }
+        targetArray = is3Digits ? lotteryData.down3 : lotteryData.down2;
     }
+
+    // Add to array and save
+    targetArray.push(newEntry);
+    saveData();
     
-    // เคลียร์ข้อความ error ถ้าผ่านการตรวจสอบทั้งหมด
-    clearError(directValueInput);
-    clearError(indirectValueInput);
-    updateSubmitButton(true);
+    // Update UI and show success message
+    updateUI();
+    showMessage('เพิ่มข้อมูลเรียบร้อยแล้ว', 'success');
+    
+    // เคลียร์เฉพาะช่องเลขหวยและจำนวนเงิน (ไม่เคลียร์ชื่อลูกค้าและประเภท)
+    lotteryNumberInput.value = '';
+    directValueInput.value = '';
+    indirectValueInput.value = '';
+    
+    // โฟกัสไปที่ช่องเลขหวยเพื่อเตรียมกรอกข้อมูลถัดไป
+    lotteryNumberInput.focus();
+    
     return true;
 }
 
-function updateSubmitButton(isValid) {
-    const submitButton = document.querySelector('#addData button[type="submit"]');
+// Confirm max value changes
+function confirmMaxValue(type) {
+    let isValid = true;
+    
+    switch (type) {
+        case 'top3':
+            const top3Direct = parseInt(top3DirectInput.value) || 0;
+            const top3Indirect = parseInt(top3IndirectInput.value) || 0;
+            
+            if (top3Direct < 0 || top3Indirect < 0) {
+                showMessage('ค่าต้องมากกว่าหรือเท่ากับ 0', 'error', maxValueMessage);
+                isValid = false;
+            } else {
+                currentMaxValues.top3Direct = top3Direct;
+                currentMaxValues.top3Indirect = top3Indirect;
+                
+                // เคลียร์เฉพาะช่อง 3 ตัวบน
+                top3DirectInput.value = '';
+                top3IndirectInput.value = '';
+            }
+            break;
+            
+        case 'top2':
+            const top2Direct = parseInt(top2DirectInput.value) || 0;
+            
+            if (top2Direct < 0) {
+                showMessage('ค่าต้องมากกว่าหรือเท่ากับ 0', 'error', maxValueMessage);
+                isValid = false;
+            } else {
+                currentMaxValues.top2Direct = top2Direct;
+                
+                // เคลียร์เฉพาะช่อง 2 ตัวบน
+                top2DirectInput.value = '';
+            }
+            break;
+            
+        case 'down3':
+            const down3Direct = parseInt(down3DirectInput.value) || 0;
+            
+            if (down3Direct < 0) {
+                showMessage('ค่าต้องมากกว่าหรือเท่ากับ 0', 'error', maxValueMessage);
+                isValid = false;
+            } else {
+                currentMaxValues.down3Direct = down3Direct;
+                
+                // เคลียร์เฉพาะช่อง 3 ตัวล่าง
+                down3DirectInput.value = '';
+            }
+            break;
+            
+        case 'down2':
+            const down2Direct = parseInt(down2DirectInput.value) || 0;
+            
+            if (down2Direct < 0) {
+                showMessage('ค่าต้องมากกว่าหรือเท่ากับ 0', 'error', maxValueMessage);
+                isValid = false;
+            } else {
+                currentMaxValues.down2Direct = down2Direct;
+                
+                // เคลียร์เฉพาะช่อง 2 ตัวล่าง
+                down2DirectInput.value = '';
+            }
+            break;
+    }
+    
     if (isValid) {
-        submitButton.disabled = false;
-        submitButton.classList.remove('disabled-button');
+        saveMaxValues();
+        showMessage('บันทึกค่าสูงสุดเรียบร้อยแล้ว', 'success', maxValueMessage);
+        updateUI();
+        
+        // ไม่ต้อง reset ทั้งฟอร์ม แต่เคลียร์แค่ช่องที่ยืนยันแล้ว (ด้านบน)
+        // setMaxForm.classList.add('hidden'); // ถ้าต้องการซ่อนฟอร์มหลังยืนยัน
+    }
+}
+
+// Filter and display data based on search and current view
+function filterAndDisplayData() {
+    const isTop = toggleTopBtn.classList.contains('active');
+    const is3Digits = toggle3Btn.classList.contains('active');
+    const searchTerm = (is3Digits ? searchInput3 : searchInput2).value.toLowerCase();
+    
+    // Determine which data to display
+    let dataToDisplay;
+    if (isTop) {
+        dataToDisplay = is3Digits ? [...lotteryData.top3] : [...lotteryData.top2];
     } else {
-        submitButton.disabled = true;
-        submitButton.classList.add('disabled-button');
-    }
-}
-
-// Show error message for a field
-function showError(field, message) {
-    let errorElement = field.nextElementSibling;
-    if (!errorElement || !errorElement.classList.contains('error-text')) {
-        errorElement = document.createElement('div');
-        errorElement.className = 'error-text';
-        field.parentNode.insertBefore(errorElement, field.nextSibling);
-    }
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-    field.classList.add('input-error');
-    
-    // เพิ่มการ scroll เพื่อแสดง error message บน mobile
-    if (window.innerWidth < 768) {
-        errorElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-}
-
-// Clear error message for a field
-function clearError(field) {
-    const errorElement = field.nextElementSibling;
-    if (errorElement && errorElement.classList.contains('error-text')) {
-        errorElement.style.display = 'none';
-    }
-    field.classList.remove('input-error');
-}
-
-// Toggle element visibility
-function toggleElement(elementId, button) {
-    const element = document.getElementById(elementId);
-    const isHidden = element.classList.toggle('hidden');
-    
-    if (button) {
-        button.classList.toggle('active', !isHidden);
-    }
-}
-
-// Get filtered customers based on search input
-function getFilteredCustomers() {
-    const searchTerm = searchInput.value.toLowerCase();
-    const customers = getFromDB(DB_KEYS.CUSTOMERS) || [];
-    
-    if (!searchTerm) return customers;
-    
-    return customers.filter(customer => 
-        customer.lotteryNumber.toLowerCase().includes(searchTerm) ||
-        customer.customerName.toLowerCase().includes(searchTerm)
-    );
-}
-
-// Calculate totals for each lottery number (separate top/down)
-function calculateTotals() {
-    const customers = getFromDB(DB_KEYS.CUSTOMERS) || [];
-    const totals = {};
-    
-    customers.forEach(customer => {
-        const key = `${customer.lotteryNumber}_${customer.buyType}`;
-        
-        if (!totals[key]) {
-            totals[key] = {
-                lotteryNumber: customer.lotteryNumber,
-                buyType: customer.buyType,
-                direct: 0,
-                indirect: 0,
-                customers: []
-            };
-        }
-        
-        totals[key].direct += customer.direct;
-        totals[key].indirect += customer.indirect;
-        totals[key].customers.push(customer);
-    });
-    
-    return totals;
-}
-
-// Calculate customer purchase summaries
-function calculateCustomerSummaries() {
-    const customers = getFromDB(DB_KEYS.CUSTOMERS) || [];
-    const summaries = {};
-    
-    customers.forEach(customer => {
-        if (!summaries[customer.customerName]) {
-            summaries[customer.customerName] = {
-                topDirect: 0,
-                topIndirect: 0,
-                downTotal: 0,
-                grandTotal: 0
-            };
-        }
-        
-        if (customer.buyType === 'top') {
-            summaries[customer.customerName].topDirect += customer.direct;
-            summaries[customer.customerName].topIndirect += customer.indirect;
-        } else {
-            summaries[customer.customerName].downTotal += customer.direct; // รวมล่างมีเฉพาะตรง
-        }
-        
-        // คำนวณยอดรวมทั้งหมด
-        summaries[customer.customerName].grandTotal = 
-            summaries[customer.customerName].topDirect + 
-            summaries[customer.customerName].topIndirect + 
-            summaries[customer.customerName].downTotal;
-    });
-    
-    return summaries;
-}
-
-// Set maximum direct/indirect values
-function setMaxValues() {
-    if (!validateMaxValues()) return;
-    
-    const newDirectValue = parseInt(directInput.value);
-    const newIndirectValue = parseInt(indirectInput.value);
-
-    // อัปเดตค่าสูงสุด
-    directValue = newDirectValue;
-    indirectValue = newIndirectValue;
-    
-    // บันทึกการตั้งค่า
-    saveSettings();
-    
-    // อัปเดตการแสดงผล
-    updateCurrentValuesDisplay();
-    
-    // แสดงข้อความสำเร็จ
-    showSuccessMessage(`อัปเดตค่าสูงสุดเป็น ${directValue} x ${indirectValue} เรียบร้อยแล้ว!`);
-    
-    // รีเซ็ตฟอร์มและซ่อน
-    document.getElementById('setMax').reset();
-    toggleElement('setMax', document.getElementById('showSetMax'));
-    
-    // รีเรนเดอร์ตารางข้อมูลและสรุป
-    renderDataTable();
-    renderSummaryTable();
-}
-
-// เพิ่มฟังก์ชันจัดการการเลือกประเภทการซื้อ
-function setActiveBetType(type) {
-    currentBetType = type;
-    
-    // อัพเดตปุ่ม toggle
-    document.querySelectorAll('.bet-type-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.getElementById(`toggle${type === 'direct' ? 'DirectOnly' : type === 'indirect' ? 'IndirectOnly' : 'Both'}`).classList.add('active');
-    
-    // อัพเดตฟิลด์กรอกข้อมูล
-    const directInput = document.getElementById('directValue');
-    const indirectInput = document.getElementById('indirectValue');
-    
-    if (type === 'direct') {
-        directInput.placeholder = "ตรง";
-        directInput.required = true;
-        directInput.disabled = false;
-        indirectInput.placeholder = "";
-        indirectInput.required = false;
-        indirectInput.disabled = true; // ปิดการใช้งานช่องโต๊ด
-        indirectInput.value = ""; // เคลียร์ค่า
-    } else if (type === 'indirect') {
-        directInput.placeholder = "";
-        directInput.required = false;
-        directInput.disabled = true; // ปิดการใช้งานช่องตรง
-        directInput.value = ""; // เคลียร์ค่า
-        indirectInput.placeholder = "โต๊ด";
-        indirectInput.required = true;
-        indirectInput.disabled = false;
-    } else { // both
-        directInput.placeholder = "ตรง";
-        directInput.required = false; // ไม่บังคับ required แต่ต้องกรอกอย่างน้อย 1 ช่อง
-        directInput.disabled = false;
-        indirectInput.placeholder = "โต๊ด";
-        indirectInput.required = false; // ไม่บังคับ required แต่ต้องกรอกอย่างน้อย 1 ช่อง
-        indirectInput.disabled = false;
+        dataToDisplay = is3Digits ? [...lotteryData.down3] : [...lotteryData.down2];
     }
     
-    // แสดง label x เฉพาะเมื่อเปิดใช้งานทั้งสองช่อง
-    document.querySelector('.x-label').style.display = type === 'both' ? 'inline-block' : 'none';
+    // Filter data based on search term
+    if (is3Digits) {
+        filteredData3 = dataToDisplay.filter(item => 
+            item.number.includes(searchTerm) || 
+            item.name.toLowerCase().includes(searchTerm)
+        );
+        displayData(filteredData3, tableBody3digits, currentPage3, pageInfo3, is3Digits);
+    } else {
+        filteredData2 = dataToDisplay.filter(item => 
+            item.number.includes(searchTerm) || 
+            item.name.toLowerCase().includes(searchTerm)
+        );
+        displayData(filteredData2, tableBody2digits, currentPage2, pageInfo2, is3Digits);
+    }
     
-    // เคลียร์ข้อความ error เมื่อเปลี่ยนโหมด
-    clearError(directInput);
-    clearError(indirectInput);
-    setTimeout(checkFormValidity, 0);
+    // Update summary tables
+    updateSummaryTables();
 }
 
-// Render data table with pagination
-function renderDataTable() {
-    const filteredCustomers = getFilteredCustomers();
-    const startIdx = (currentPage - 1) * rowsPerPage;
-    const paginatedCustomers = filteredCustomers.slice(startIdx, startIdx + rowsPerPage);
-    const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
-    const totals = calculateTotals();
-    
-    // เรียงลำดับข้อมูลจากเก่าไปใหม่ (ตามเวลา createdAt)
-    paginatedCustomers.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    
-    // Update table body
+// Display data in table with pagination
+function displayData(data, tableBody, currentPage, pageInfo, is3Digits) {
     tableBody.innerHTML = '';
     
-    if (paginatedCustomers.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="7" style="text-align: center;">ไม่พบข้อมูลลูกค้า</td>`;
-        tableBody.appendChild(row);
-    } else {
-        // คำนวณข้อมูลที่เกิน limit สำหรับแต่ละเลขหวย
-        const exceededInfo = {};
-        
-        // เก็บข้อมูลรวมของแต่ละเลขหวย
-        const lotteryTotals = {};
-        filteredCustomers.forEach(customer => {
-            const key = `${customer.lotteryNumber}_${customer.buyType}`;
-            if (!lotteryTotals[key]) {
-                lotteryTotals[key] = { direct: 0, indirect: 0, count: 0 };
-            }
-            lotteryTotals[key].direct += customer.direct;
-            lotteryTotals[key].indirect += customer.indirect;
-            lotteryTotals[key].count++;
-        });
-        
-        // ตรวจสอบว่าเลขหวยใดเกิน limit
-        Object.keys(lotteryTotals).forEach(key => {
-            const [lotteryNumber, buyType] = key.split('_');
-            const total = lotteryTotals[key];
-            
-            if (total.direct > directValue || total.indirect > indirectValue) {
-                exceededInfo[key] = {
-                    directExceed: total.direct > directValue ? total.direct - directValue : 0,
-                    indirectExceed: total.indirect > indirectValue ? total.indirect - indirectValue : 0,
-                    totalDirect: total.direct,
-                    totalIndirect: total.indirect,
-                    buyType: buyType
-                };
-            }
-        });
-        
-        // เรนเดอร์ข้อมูล
-        paginatedCustomers.forEach(customer => {
-            const row = document.createElement('tr');
-            const key = `${customer.lotteryNumber}_${customer.buyType}`;
-            const isExceeded = exceededInfo[key];
-            
-            // ตรวจสอบว่ารายการนี้เป็นรายการล่าสุดของเลขหวยนี้หรือไม่
-            const isLatestForThisNumber = filteredCustomers
-                .filter(c => c.lotteryNumber === customer.lotteryNumber && c.buyType === customer.buyType)
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0].id === customer.id;
-            
-            row.innerHTML = `
-                <td>${customer.lotteryNumber}</td>
-                <td>${customer.buyType === 'top' ? 'บน' : 'ล่าง'}</td>
-                <td>${customer.customerName}</td>
-                <td class="${isExceeded && isLatestForThisNumber && customer.direct > 0 ? 'exceed-limit' : ''}">${customer.direct}</td>
-                <td class="${isExceeded && isLatestForThisNumber && customer.indirect > 0 ? 'exceed-limit' : ''}">${customer.indirect}</td>
-                <td class="${isExceeded && isLatestForThisNumber ? 'exceed-limit' : ''}">
-                    ${isExceeded && isLatestForThisNumber ? getExceedNote(exceededInfo[key]) : '-'}
-                </td>
-                <td>
-                    <button class="action-btn edit-btn" data-id="${customer.id}">แก้ไข</button>
-                    <button class="action-btn delete-btn" data-id="${customer.id}">ลบ</button>
-                </td>
-            `;
-            
-            tableBody.appendChild(row);
-        });
-    }
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, data.length);
+    const paginatedData = data.slice(startIndex, endIndex);
     
-    // อัพเดต pagination controls
-    document.getElementById('pageInfo').textContent = `หน้า ${currentPage} จาก ${totalPages || 1}`;
-    document.getElementById('prevPage').disabled = currentPage === 1;
-    document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
+    // สร้างอ็อบเจ็กต์เพื่อเก็บข้อมูลยอดรวมของแต่ละเลข
+    const numberTotals = {};
     
-    // Add event listeners to action buttons
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            editCustomer(this.dataset.id);
-        });
-    });
-    
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            deleteCustomer(this.dataset.id);
-        });
-    });
-}
-
-function addCustomerData() {
-    const lotteryNumber = lotteryNumberInput.value.trim();
-    const customerName = customerNameInput.value.trim();
-    const buyType = currentSelectedMode === 'down' ? 'down' : 'top';
-    
-    // รับค่าตามโหมดการซื้อ
-    let direct = 0;
-    let indirect = 0;
-    
-    if (currentSelectedMode === 'top') {
-        direct = parseInt(directValueInput.value) || 0;
-        indirect = parseInt(indirectValueInput.value) || 0;
-        
-        // สำหรับโหมดเฉพาะตรงหรือโต๊ด ให้ตั้งค่าที่ไม่ได้กรอกเป็น 0
-        if (currentBetType === 'direct') {
-            indirect = 0;
-        } else if (currentBetType === 'indirect') {
-            direct = 0;
+    // คำนวณยอดรวมทั้งหมดก่อน
+    data.forEach(item => {
+        const key = `${item.number}-${item.type}-${is3Digits ? '3ตัว' : '2ตัว'}`;
+        if (!numberTotals[key]) {
+            numberTotals[key] = { direct: 0, indirect: 0 };
         }
+        numberTotals[key].direct += item.direct;
+        numberTotals[key].indirect += item.indirect || 0;
+    });
+    
+    // ตรวจสอบรายการล่าสุดที่ทำให้เกิน
+    const exceededEntries = {};
+    data.forEach(item => {
+        const key = `${item.number}-${item.type}-${is3Digits ? '3ตัว' : '2ตัว'}`;
+        const totals = numberTotals[key];
+        const digitType = is3Digits ? '3ตัว' : '2ตัว';
+        
+        let maxDirect = 0;
+        let maxIndirect = 0;
+        
+        if (digitType === '3ตัว' && item.type === 'ตัวบน') {
+            maxDirect = currentMaxValues.top3Direct;
+            maxIndirect = currentMaxValues.top3Indirect;
+        }
+        else if (digitType === '2ตัว' && item.type === 'ตัวบน') {
+            maxDirect = currentMaxValues.top2Direct;
+        }
+        else if (digitType === '3ตัว' && item.type === 'ตัวล่าง') {
+            maxDirect = currentMaxValues.down3Direct;
+        }
+        else if (digitType === '2ตัว' && item.type === 'ตัวล่าง') {
+            maxDirect = currentMaxValues.down2Direct;
+        }
+        
+        if (totals.direct > maxDirect || totals.indirect > maxIndirect) {
+            exceededEntries[key] = item.timestamp; // เก็บ timestamp ของรายการล่าสุด
+        }
+    });
+    
+    // แสดงข้อมูลในตาราง
+    paginatedData.forEach((item, index) => {
+        const row = document.createElement('tr');
+        const key = `${item.number}-${item.type}-${is3Digits ? '3ตัว' : '2ตัว'}`;
+        const isLatestExceeded = exceededEntries[key] === item.timestamp;
+        
+        let note = '';
+        let isExceeded = false;
+        
+        if (isLatestExceeded) {
+            const totals = numberTotals[key];
+            const digitType = is3Digits ? '3ตัว' : '2ตัว';
+            
+            if (digitType === '3ตัว' && item.type === 'ตัวบน') {
+                if (totals.direct > currentMaxValues.top3Direct) {
+                    note = 'เกินค่าสูงสุด (ตรง)';
+                    isExceeded = true;
+                }
+                if (totals.indirect > currentMaxValues.top3Indirect) {
+                    note = note ? note + ', เกินค่าสูงสุด (โต๊ด)' : 'เกินค่าสูงสุด (โต๊ด)';
+                    isExceeded = true;
+                }
+            }
+            else if (digitType === '2ตัว' && item.type === 'ตัวบน') {
+                if (totals.direct > currentMaxValues.top2Direct) {
+                    note = 'เกินค่าสูงสุด';
+                    isExceeded = true;
+                }
+            }
+            else if (digitType === '3ตัว' && item.type === 'ตัวล่าง') {
+                if (totals.direct > currentMaxValues.down3Direct) {
+                    note = 'เกินค่าสูงสุด';
+                    isExceeded = true;
+                }
+            }
+            else if (digitType === '2ตัว' && item.type === 'ตัวล่าง') {
+                if (totals.direct > currentMaxValues.down2Direct) {
+                    note = 'เกินค่าสูงสุด';
+                    isExceeded = true;
+                }
+            }
+        }
+        
+        // Add cells to row
+        row.innerHTML = `
+            <td>${item.number}</td>
+            <td>${item.type}</td>
+            <td>${item.name}</td>
+            <td>${item.direct}</td>
+            <td>${is3Digits ? item.indirect : '-'}</td>
+            <td class="${isExceeded ? 'exceed-limit' : ''}">${note}</td>
+            <td>
+                <button class="edit-btn action-btn" data-id="${item.timestamp}">แก้ไข</button>
+                <button class="delete-btn action-btn" data-id="${item.timestamp}">ลบ</button>
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+    
+    // Update pagination info
+    const totalPages = Math.ceil(data.length / itemsPerPage);
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    
+    // Enable/disable pagination buttons
+    if (is3Digits) {
+        prevPage3.disabled = currentPage === 1;
+        nextPage3.disabled = currentPage === totalPages || totalPages === 0;
     } else {
-        // โหมดตัวล่าง
-        direct = parseInt(directValueInput.value) || 0;
-        indirect = 0;
+        prevPage2.disabled = currentPage === 1;
+        nextPage2.disabled = currentPage === totalPages || totalPages === 0;
     }
     
-    // สร้างข้อมูลลูกค้า
-    const customer = {
-        id: Date.now().toString(),
-        lotteryNumber,
-        customerName,
-        buyType,
-        direct,
-        indirect,
-        createdAt: new Date().toISOString()
-    };
-    
-    // บันทึกลงฐานข้อมูล
-    const customers = getFromDB(DB_KEYS.CUSTOMERS) || [];
-    customers.push(customer);
-    saveToDB(DB_KEYS.CUSTOMERS, customers);
-    
-    // แสดงข้อความสำเร็จ
-    showSuccessMessage('เพิ่มข้อมูลลูกค้าเรียบร้อยแล้ว!');
-    
-    // รีเซ็ตฟอร์ม
-    resetForm();
-    
-    // รีเซ็ตค่า currentPage กลับไปหน้าแรก
-    currentPage = 1;
-    
-    // รีเรนเดอร์ตารางทันที
-    renderDataTable();
-    renderSummaryTable();
-    
-    // โฟกัสไปที่ช่องกรอกเลขหวยเพื่อเตรียมกรอกข้อมูลใหม่
-    lotteryNumberInput.focus();
+    // Add event listeners to edit/delete buttons
+    addEditDeleteListeners();
 }
 
-function resetForm() {
-    document.getElementById('addData').reset();
-    lotteryNumberInput.focus();
-    checkFormValidity();
+// Update summary tables
+function updateSummaryTables() {
+    // Number summary table
+    updateNumberSummaryTable();
+    
+    // Customer summary table
+    updateCustomerSummaryTable();
 }
 
-// Render summary table
-function renderSummaryTable() {
-    const summaries = calculateCustomerSummaries();
-    const summaryBody = document.getElementById('summaryBody');
-    summaryBody.innerHTML = '';
+// Update number summary table
+function updateNumberSummaryTable() {
+    numberSummaryBody.innerHTML = '';
     
-    let totalTopDirect = 0;
-    let totalTopIndirect = 0;
-    let totalDown = 0;
-    let totalAll = 0;
+    // Combine all data
+    const allData = [
+        ...lotteryData.top3.map(item => ({ ...item, digitType: '3ตัวบน' })),
+        ...lotteryData.top2.map(item => ({ ...item, digitType: '2ตัวบน' })),
+        ...lotteryData.down3.map(item => ({ ...item, digitType: '3ตัวล่าง' })),
+        ...lotteryData.down2.map(item => ({ ...item, digitType: '2ตัวล่าง' }))
+    ];
     
-    // Add customer rows
-    Object.entries(summaries).forEach(([customerName, summary]) => {
+    // Group by number and type
+    const numberGroups = {};
+    
+    allData.forEach(item => {
+        const key = `${item.number}-${item.type}-${item.digitType}`;
+        if (!numberGroups[key]) {
+            numberGroups[key] = {
+                number: item.number,
+                type: item.type,
+                digitType: item.digitType,
+                names: new Set(), // ใช้ Set เพื่อเก็บชื่อที่ไม่ซ้ำ
+                directTotal: 0,
+                indirectTotal: 0
+            };
+        }
+        
+        // เพิ่มชื่อเข้า Set (จะไม่เพิ่มถ้าซ้ำ)
+        numberGroups[key].names.add(item.name);
+        
+        numberGroups[key].directTotal += item.direct;
+        numberGroups[key].indirectTotal += item.indirect || 0;
+    });
+    
+    // Convert to array and sort
+    const summaryArray = Object.values(numberGroups).sort((a, b) => {
+        if (a.digitType !== b.digitType) {
+            return a.digitType.localeCompare(b.digitType);
+        }
+        return a.number.localeCompare(b.number);
+    });
+    
+    // Add rows to table
+    summaryArray.forEach(item => {
         const row = document.createElement('tr');
+        
+        // แปลง Set เป็น Array และรวมเป็น string
+        const uniqueNames = Array.from(item.names).join(', ');
         
         row.innerHTML = `
-            <td>${customerName}</td>
-            <td>${summary.topDirect}</td>
-            <td>${summary.topIndirect}</td>
-            <td>${summary.downTotal}</td>
-            <td>${summary.grandTotal}</td>
+            <td>${item.number}</td>
+            <td>${item.digitType} ${item.type}</td>
+            <td>${uniqueNames}</td>
+            <td>${item.directTotal}</td>
+            <td>${item.indirectTotal}</td>
+            <td>${item.directTotal + item.indirectTotal}</td>
         `;
+        numberSummaryBody.appendChild(row);
+    });
+}
+
+// Update customer summary table
+function updateCustomerSummaryTable() {
+    summaryBody.innerHTML = '';
+    
+    // Combine all data and group by customer name
+    const allData = [
+        ...lotteryData.top3.map(item => ({ ...item, digitType: '3ตัวบน' })),
+        ...lotteryData.top2.map(item => ({ ...item, digitType: '2ตัวบน' })),
+        ...lotteryData.down3.map(item => ({ ...item, digitType: '3ตัวล่าง' })),
+        ...lotteryData.down2.map(item => ({ ...item, digitType: '2ตัวล่าง' }))
+    ];
+    
+    const customerGroups = {};
+    
+    allData.forEach(item => {
+        if (!customerGroups[item.name]) {
+            customerGroups[item.name] = {
+                name: item.name,
+                numbers: [],
+                topDirect: 0,
+                topIndirect: 0,
+                downDirect: 0,
+                downIndirect: 0
+            };
+        }
         
-        summaryBody.appendChild(row);
+        // Add number to list (avoid duplicates)
+        if (!customerGroups[item.name].numbers.includes(item.number)) {
+            customerGroups[item.name].numbers.push(item.number);
+        }
         
-        // Add to totals
-        totalTopDirect += summary.topDirect;
-        totalTopIndirect += summary.topIndirect;
-        totalDown += summary.downTotal;
-        totalAll += summary.grandTotal;
+        // Add to appropriate total
+        if (item.type === 'ตัวบน') {
+            customerGroups[item.name].topDirect += item.direct;
+            customerGroups[item.name].topIndirect += item.indirect;
+        } else {
+            customerGroups[item.name].downDirect += item.direct;
+            customerGroups[item.name].downIndirect += item.indirect;
+        }
     });
     
-    // Add total row
-    if (Object.keys(summaries).length > 0) {
-        const totalRow = document.createElement('tr');
-        totalRow.className = 'total-row';
-        
-        totalRow.innerHTML = `
-            <td>รวมทั้งหมด</td>
-            <td>${totalTopDirect}</td>
-            <td>${totalTopIndirect}</td>
-            <td>${totalDown}</td>
-            <td>${totalAll}</td>
+    // Convert to array and sort
+    const summaryArray = Object.values(customerGroups).sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Add rows to table
+    summaryArray.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.numbers.join(', ')}</td>
+            <td>${item.topDirect}</td>
+            <td>${item.topIndirect}</td>
+            <td>${item.downDirect + item.downIndirect}</td>
+            <td>${item.topDirect + item.topIndirect + item.downDirect + item.downIndirect}</td>
         `;
+        summaryBody.appendChild(row);
+    });
+}
+
+// Add event listeners to edit and delete buttons
+function addEditDeleteListeners() {
+    // Edit buttons
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const timestamp = parseInt(e.target.dataset.id);
+            editEntry(timestamp);
+        });
+    });
+    
+    // Delete buttons
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const timestamp = parseInt(e.target.dataset.id);
+            deleteEntry(timestamp);
+        });
+    });
+}
+
+// Edit an entry
+function editEntry(timestamp) {
+    // Find the entry in the data
+    let entry = null;
+    let dataType = null;
+    
+    if (lotteryData.top3.some(item => item.timestamp === timestamp)) {
+        entry = lotteryData.top3.find(item => item.timestamp === timestamp);
+        dataType = 'top3';
+    } else if (lotteryData.top2.some(item => item.timestamp === timestamp)) {
+        entry = lotteryData.top2.find(item => item.timestamp === timestamp);
+        dataType = 'top2';
+    } else if (lotteryData.down3.some(item => item.timestamp === timestamp)) {
+        entry = lotteryData.down3.find(item => item.timestamp === timestamp);
+        dataType = 'down3';
+    } else if (lotteryData.down2.some(item => item.timestamp === timestamp)) {
+        entry = lotteryData.down2.find(item => item.timestamp === timestamp);
+        dataType = 'down2';
+    }
+    
+    if (!entry) return;
+    
+    // Set form values based on entry
+    lotteryNumberInput.value = entry.number;
+    customerNameInput.value = entry.name;
+    
+    // Set toggle buttons
+    if (entry.type === 'ตัวบน') {
+        toggleTopBtn.click();
+    } else {
+        toggleDownBtn.click();
+    }
+    
+    if (dataType === 'top3' || dataType === 'down3') {
+        toggle3Btn.click();
+    } else {
+        toggle2Btn.click();
+    }
+    
+    directValueInput.value = entry.direct;
+    if (dataType === 'top3') {
+        indirectValueInput.value = entry.indirect;
+    } else {
+        indirectValueInput.value = '';
+    }
+    
+    // Remove the entry from data
+    if (dataType === 'top3') {
+        lotteryData.top3 = lotteryData.top3.filter(item => item.timestamp !== timestamp);
+    } else if (dataType === 'top2') {
+        lotteryData.top2 = lotteryData.top2.filter(item => item.timestamp !== timestamp);
+    } else if (dataType === 'down3') {
+        lotteryData.down3 = lotteryData.down3.filter(item => item.timestamp !== timestamp);
+    } else if (dataType === 'down2') {
+        lotteryData.down2 = lotteryData.down2.filter(item => item.timestamp !== timestamp);
+    }
+    
+    saveData();
+    validateForm();
+    showMessage('นำข้อมูลออกเพื่อแก้ไข กรุณายืนยันอีกครั้งหลังจากแก้ไข', 'success');
+}
+
+// Delete an entry
+function deleteEntry(timestamp) {
+    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
+        let found = false;
         
-        summaryBody.appendChild(totalRow);
-    } else {
-        const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = `<td colspan="5" style="text-align: center;">ไม่มีข้อมูลสรุป</td>`;
-        summaryBody.appendChild(emptyRow);
+        if (lotteryData.top3.some(item => item.timestamp === timestamp)) {
+            lotteryData.top3 = lotteryData.top3.filter(item => item.timestamp !== timestamp);
+            found = true;
+        } else if (lotteryData.top2.some(item => item.timestamp === timestamp)) {
+            lotteryData.top2 = lotteryData.top2.filter(item => item.timestamp !== timestamp);
+            found = true;
+        } else if (lotteryData.down3.some(item => item.timestamp === timestamp)) {
+            lotteryData.down3 = lotteryData.down3.filter(item => item.timestamp !== timestamp);
+            found = true;
+        } else if (lotteryData.down2.some(item => item.timestamp === timestamp)) {
+            lotteryData.down2 = lotteryData.down2.filter(item => item.timestamp !== timestamp);
+            found = true;
+        }
+        
+        if (found) {
+            saveData();
+            updateUI();
+            showMessage('ลบรายการเรียบร้อยแล้ว', 'success');
+        }
     }
 }
 
-// แก้ไขฟังก์ชัน editCustomer
-function editCustomer(id) {
-    const customers = getFromDB(DB_KEYS.CUSTOMERS) || [];
-    const customer = customers.find(c => c.id === id);
+// Export all data to CSV
+function exportAllData() {
+    // Combine all data
+    const allData = [
+        ...lotteryData.top3.map(item => ({ ...item, digitType: '3ตัวบน' })),
+        ...lotteryData.top2.map(item => ({ ...item, digitType: '2ตัวบน' })),
+        ...lotteryData.down3.map(item => ({ ...item, digitType: '3ตัวล่าง' })),
+        ...lotteryData.down2.map(item => ({ ...item, digitType: '2ตัวล่าง' }))
+    ];
     
-    if (!customer) return;
+    // Sort by timestamp (oldest first)
+    allData.sort((a, b) => a.timestamp - b.timestamp);
     
-    lotteryNumberInput.value = customer.lotteryNumber;
-    customerNameInput.value = customer.customerName;
-    buyTypeSelect.value = customer.buyType;
+    // Convert to CSV
+    let csv = 'เลขหวย,ประเภท,ชื่อลูกค้า,ตรง,โต๊ด,เวลาที่บันทึก\n';
     
-    // Set active type and fill values
-    setActiveType(customer.buyType);
-    if (customer.buyType === 'top') {
-        directValueInput.value = customer.direct;
-        indirectValueInput.value = customer.indirect;
-    } else {
-        downValueInput.value = customer.direct;
-    }
-    
-    const updatedCustomers = customers.filter(c => c.id !== id);
-    saveToDB(DB_KEYS.CUSTOMERS, updatedCustomers);
-}
-
-// Delete customer
-function deleteCustomer(id) {
-    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลลูกค้านี้?')) return;
-    
-    const customers = getFromDB(DB_KEYS.CUSTOMERS) || [];
-    const updatedCustomers = customers.filter(c => c.id !== id);
-    saveToDB(DB_KEYS.CUSTOMERS, updatedCustomers);
-    
-    showSuccessMessage('ลบข้อมูลลูกค้าเรียบร้อยแล้ว!');
-    renderDataTable();
-    renderSummaryTable();
-}
-
-// Clear all data
-function clearAllData() {
-    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถยกเลิกได้')) return;
-    
-    localStorage.removeItem(DB_KEYS.CUSTOMERS);
-    localStorage.removeItem(DB_KEYS.SETTINGS);
-    
-    // Reset all values
-    directValue = 0;
-    indirectValue = 0;
-    directInput.value = '';
-    indirectInput.value = '';
-    
-    saveSettings();
-    updateCurrentValuesDisplay();
-    
-    showSuccessMessage('ลบข้อมูลทั้งหมดเรียบร้อยแล้ว!');
-    renderDataTable();
-    renderSummaryTable();
-}
-
-function checkFormValidity() {
-    const isValid = validateCustomerForm();
-    updateSubmitButton(isValid);
-    return isValid;
-}
-
-// Export to CSV
-function exportToCSV() {
-    const customers = getFromDB(DB_KEYS.CUSTOMERS) || [];
-    const totals = calculateTotals();
-    
-    if (customers.length === 0) {
-        showSuccessMessage('ไม่มีข้อมูลที่จะส่งออก!', true);
-        return;
-    }
-    
-    // CSV header
-    let csv = 'เลขหวย,ประเภท,คนซื้อ,ตรง,โต๊ด,หมายเหตุ\n';
-    
-    // Add each customer
-    customers.forEach(customer => {
-        const lotteryTotals = totals[customer.lotteryNumber] || { direct: 0, indirect: 0 };
-        const note = getNote(customer, lotteryTotals);
-        csv += `"${customer.lotteryNumber}","${customer.buyType === 'top' ? 'บน' : 'ล่าง'}","${customer.customerName}",${customer.direct},${customer.indirect},"${note}"\n`;
+    allData.forEach(item => {
+        const date = new Date(item.timestamp);
+        const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        
+        csv += `"${item.number}","${item.digitType} ${item.type}","${item.name}",${item.direct},${item.indirect},"${dateStr}"\n`;
     });
     
     // Create download link
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
-    link.download = `lottery_data_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lottery_data_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 }
 
-// Get note for the table
-function getNote(customer, totals, isLatestExceeded = false) {
-    if (!isLatestExceeded) return '-';
+// Show message
+function showMessage(message, type, element = formMessage) {
+    element.textContent = message;
+    element.className = `form-message ${type}`;
+    element.classList.remove('hidden');
     
-    const notes = [];
-    const lotteryTotals = totals || { direct: 0, indirect: 0 };
-    
-    // Check total limits
-    if (lotteryTotals.direct > directValue) {
-        notes.push(`รวมตรงเกิน ${lotteryTotals.direct - directValue}`);
-    }
-    
-    if (lotteryTotals.indirect > indirectValue) {
-        notes.push(`รวมโต๊ดเกิน ${lotteryTotals.indirect - indirectValue}`);
-    }
-    
-    return notes.join(', ') || '-';
-}
-
-function getExceedNote(exceedInfo) {
-    const notes = [];
-    const typeText = exceedInfo.buyType === 'top' ? 'บน' : 'ล่าง';
-    
-    if (exceedInfo.directExceed > 0) {
-        notes.push(`${typeText}ตรงเกิน ${exceedInfo.directExceed}`);
-    }
-    
-    if (exceedInfo.indirectExceed > 0) {
-        notes.push(`${typeText}โต๊ดเกิน ${exceedInfo.indirectExceed}`);
-    }
-    
-    return notes.join(', ');
-}
-
-
-// Show success/error message
-function showSuccessMessage(message, isError = false) {
-    const formMessage = document.getElementById('formMessage');
-    formMessage.textContent = message;
-    formMessage.className = isError ? 'form-message error' : 'form-message success';
-    
-    // ลบข้อความหลังจาก 3 วินาที
+    // Hide after 3 seconds
     setTimeout(() => {
-        formMessage.textContent = '';
-        formMessage.className = 'form-message';
+        element.classList.add('hidden');
     }, 3000);
+}
+
+// Update UI based on current view
+function updateUI() {
+    const isTop = toggleTopBtn.classList.contains('active');
+    const is3Digits = toggle3Btn.classList.contains('active');
+    
+    // Show/hide appropriate tables
+    dataTable3digits.style.display = is3Digits ? 'block' : 'none';
+    dataTable2digits.style.display = is3Digits ? 'none' : 'block';
+    
+    // Update buy type text
+    buyTypeTextInput.value = isTop ? 'ตัวบน' : 'ตัวล่าง';
+    
+    // Show/hide indirect value input
+    indirectValueInput.style.display = (isTop && is3Digits) ? 'block' : 'none';
+    document.querySelectorAll('.x-label').forEach(label => {
+        label.style.display = (isTop && is3Digits) ? 'flex' : 'none';
+    });
+    
+    // Filter and display data
+    filterAndDisplayData();
+    
+    // Validate form
+    validateForm();
 }
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
 
-// เพิ่มฟังก์ชันจัดการการกด Enter
-function handleEnterKey(event) {
-    if (event.key === 'Enter') {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const inputs = Array.from(form.querySelectorAll('input, select, button[type="submit"]'));
-        const currentIndex = inputs.indexOf(event.target);
-        
-        if (currentIndex < inputs.length - 1) {
-            inputs[currentIndex + 1].focus();
-        } else {
-            // ถ้าเป็นช่องสุดท้ายให้ส่งฟอร์มอัตโนมัติ
-            form.dispatchEvent(new Event('submit'));
+// เพิ่มฟังก์ชันตรวจสอบยอดรวม
+function checkTotalExceedsMax(number, type, digitType, direct, indirect) {
+    // คำนวณยอดรวมปัจจุบันของเลขนี้
+    let totalDirect = 0;
+    let totalIndirect = 0;
+    
+    // ตรวจสอบข้อมูลทั้งหมดที่ตรงกับเลขและประเภทนี้
+    const allData = [
+        ...lotteryData.top3.map(item => ({ ...item, digitType: '3ตัวบน'})),
+        ...lotteryData.top2.map(item => ({ ...item, digitType: '2ตัวบน'})),
+        ...lotteryData.down3.map(item => ({ ...item, digitType: '3ตัวล่าง'})),
+        ...lotteryData.down2.map(item => ({ ...item, digitType: '2ตัวล่าง'})) 
+    ];
+    
+    const matchingNumbers = allData.filter(item => 
+        item.number === number && 
+        item.type === type &&
+        item.digitType === digitType
+    );
+    
+    matchingNumbers.forEach(item => {
+        totalDirect += item.direct;
+        totalIndirect += item.indirect || 0;
+    });
+    
+    // เพิ่มค่าที่กำลังจะบันทึก
+    totalDirect += direct;
+    totalIndirect += indirect || 0;
+    
+    // ตรวจสอบกับค่าสูงสุด
+    let exceeds = false;
+    let note = '';
+    
+    if (digitType === '3ตัวบน' && type === 'ตัวบน') {
+        if (totalDirect > currentMaxValues.top3Direct) {
+            exceeds = true;
+            note = 'เกินค่าสูงสุด (ตรง)';
+        }
+        if (totalIndirect > currentMaxValues.top3Indirect) {
+            exceeds = true;
+            note = note ? note + ', เกินค่าสูงสุด (โต๊ด)' : 'เกินค่าสูงสุด (โต๊ด)';
+        }
+    } 
+    else if (digitType === '2ตัวบน' && type === 'ตัวบน') {
+        if (totalDirect > currentMaxValues.top2Direct) {
+            exceeds = true;
+            note = 'เกินค่าสูงสุด';
         }
     }
+    else if (digitType === '3ตัวล่าง' && type === 'ตัวล่าง') {
+        if (totalDirect > currentMaxValues.down3Direct) {
+            exceeds = true;
+            note = 'เกินค่าสูงสุด';
+        }
+    }
+    else if (digitType === '2ตัวล่าง' && type === 'ตัวล่าง') {
+        if (totalDirect > currentMaxValues.down2Direct) {
+            exceeds = true;
+            note = 'เกินค่าสูงสุด';
+        }
+    }
+    
+    return { exceeds, note };
 }

@@ -534,29 +534,34 @@ function displayData(data, tableBody, currentPage, pageInfo, is3Digits) {
             
             if (digitType === '3ตัว' && item.type === 'ตัวบน') {
                 if (totals.direct > currentMaxValues.top3Direct) {
-                    note = 'เกินค่าสูงสุด (ตรง)';
+                    const exceedAmount = totals.direct - currentMaxValues.top3Direct;
+                    note = `เกินค่าสูงสุด (ตรง) ${exceedAmount}`;
                     isExceeded = true;
                 }
                 if (totals.indirect > currentMaxValues.top3Indirect) {
-                    note = note ? note + ', เกินค่าสูงสุด (โต๊ด)' : 'เกินค่าสูงสุด (โต๊ด)';
+                    const exceedAmount = totals.indirect - currentMaxValues.top3Indirect;
+                    note = note ? note + `, เกินค่าสูงสุด (โต๊ด) ${exceedAmount}` : `เกินค่าสูงสุด (โต๊ด) ${exceedAmount}`;
                     isExceeded = true;
                 }
             }
             else if (digitType === '2ตัว' && item.type === 'ตัวบน') {
                 if (totals.direct > currentMaxValues.top2Direct) {
-                    note = 'เกินค่าสูงสุด';
+                    const exceedAmount = totals.direct - currentMaxValues.top2Direct;
+                    note = `เกินค่าสูงสุด ${exceedAmount}`;
                     isExceeded = true;
                 }
             }
             else if (digitType === '3ตัว' && item.type === 'ตัวล่าง') {
                 if (totals.direct > currentMaxValues.down3Direct) {
-                    note = 'เกินค่าสูงสุด';
+                    const exceedAmount = totals.direct - currentMaxValues.down3Direct;
+                    note = `เกินค่าสูงสุด ${exceedAmount}`;
                     isExceeded = true;
                 }
             }
             else if (digitType === '2ตัว' && item.type === 'ตัวล่าง') {
                 if (totals.direct > currentMaxValues.down2Direct) {
-                    note = 'เกินค่าสูงสุด';
+                    const exceedAmount = totals.direct - currentMaxValues.down2Direct;
+                    note = `เกินค่าสูงสุด ${exceedAmount}`;
                     isExceeded = true;
                 }
             }
